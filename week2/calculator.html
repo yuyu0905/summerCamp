@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- CSS only -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+    <style>
+        .calculator {
+            background-color: #FFF8DC;
+        }
+        .form-control {
+            background-color: #FFF8DC;
+        }
+    </style>
+    <title>簡易雙數的計算機</title>
+</head>
+<body>
+    <div id="app">
+        <div class="container mt-5">
+            <div class="row">
+                <div class="col-6 rounded border border-dark calculator" style="height: 220px;">
+                    <div class="row">
+                        <div class="col my-3 mx-4">
+                            <input type="number" class="form-control" v-model.number="numA">
+                        </div>
+                        <div class="col-1 my-3">
+                            <b>{{ operator }}</b>
+                        </div>    
+                        <div class="col my-3">
+                            <input type="number" class="form-control" v-model.number="numB">
+                        </div>
+                        <div class="col my-3">
+                            <b>= {{ answer }} </b>
+                        </div>   
+                    </div>
+                    <div class="row" >
+                        <div class="col btn-group-lg my-4" role="group">
+                            <button type="button" class="btn btn-outline-success mx-1 my-1" :class="{ active: operator === '+' }" @click="setOperator('+')">+</button>
+                            <button type="button" class="btn btn-outline-success mx-1 my-1" :class="{ active : operator === '-' }" @click="setOperator('-')">-</button>
+                            <button type="button" class="btn btn-outline-success mx-1 my-1" :class="{ active : operator === '×' }"@click="setOperator('×')">×</button>
+                            <button type="button" class="btn btn-outline-success mx-1 my-1" :class="{ active : operator === '÷' }"@click="setOperator('÷')">÷</button>
+                            <button type="button" class="btn btn-outline-danger mx-1 my-1" @click="computAns()">=</button>
+                            <button type="button" class="btn btn-outline-danger mx-1 my-1" @click="clearCal()">AC</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-6 list-group">
+                    <ul>
+                        <li class="list-group-item list-group-item-primary rounded">歷史紀錄
+                            <button type="button" class="btn btn-primary mx-4 rounded" @click="clearHis()">清空</button>
+                        </li>
+                        <li v-for="(item, index) in hisList" ::key="index" class="list-group-item rounded">
+                            {{ item }}
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0/dist/js/bootstrap.bundle.min.js" integrity="sha384-p34f1UUtsS3wqzfto5wAAmdvj+osOnFyQFpp4Ua3gs/ZVWx6oOypYoCJhGGScy+8" crossorigin="anonymous"></script>
+    <script src="https://unpkg.com/vue@next"></script>
+    <script>
+        Vue.createApp({
+            data() {
+                return {
+                    numA : 0,
+                    numB : 0,
+                    operator : '+',
+                    answer : 0,
+                    hisList: []
+                }
+            },
+            methods: {
+                setOperator(o) {
+                    let vm = this;
+                    vm.operator = o;
+                },
+                computAns() {
+                    let vm = this;
+                    if(vm.operator === '+')
+                        vm.answer = vm.numA + vm.numB;
+                    else if(vm.operator === '-')
+                        vm.answer = vm.numA - vm.numB;
+                    else if(vm.operator === '×')
+                        vm.answer = vm.numA * vm.numB;
+                    else
+                        vm.answer = vm.numA / vm.numB;
+                    
+                    vm.historyList();
+                },
+                clearCal() {
+                    let vm = this;
+                    vm.numA = 0;
+                    vm.numB = 0;
+                    vm.operator = '+';
+                    vm.answer = 0;
+                },
+                historyList() {
+                    let vm = this;
+                    vm.hisList.push(`${vm.numA}  ${vm.operator}  ${vm.numB} = ${vm.answer}`);
+                    if(vm.hisList.length > 10) {
+                        //只紀錄10筆
+                        vm.hisList.shift();
+                    }
+                    localStorage.setItem("historyList", JSON.stringify(vm.hisList));
+                },
+                clearHis() {
+                    let vm = this;
+                    vm.hisList = [];
+                    localStorage.removeItem("historyList");
+                }
+            },
+            mounted() {
+                let vm = this;
+                vm.hisList = JSON.parse(localStorage.getItem("historyList"));
+                if(vm.hisList == null)
+                    vm.hisList = [];
+            },
+        }).mount('#app');
+
+    </script>
+</body>
+</html>
