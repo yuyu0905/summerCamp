@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>待辦事項</title>
+    <!-- CSS only -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.5.0/font/bootstrap-icons.css">
+    <style >
+        html {
+            height: 100%;
+        }
+        body {
+            background-image: url('https://images.pexels.com/photos/733857/pexels-photo-733857.jpeg?cs=srgb&dl=pexels-tirachard-kumtanom-733857.jpg&fm=jpg');
+            /* Full height */
+             height: 100%;
+            /* Center and scale the image nicely */
+            background-position: center;
+            background-repeat: no-repeat;
+            background-size: cover;
+        }
+        .btn {
+            color: #fc8600;
+        }
+        .btn:hover{
+            border-color: #f1b167;
+            background-color: #f1b167;
+        }
+        .nav-pills .nav-link.active {
+            background-color: #f1b167;
+        }
+        .nav-link {
+            color: #fc8600;
+        }
+        .completed {
+            text-decoration: line-through
+        }
+        .form-check-input:checked {
+            background-color: #f1b167;
+            border-color: #f1b167;
+        }
+        i {
+            color: #f1b167;
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <div class="container mt-5">
+            <h2><i class="bi bi-book"></i> 待辦事項(Composition API)</h2>
+
+            <!-- 新增代辦事項 -->
+            <div class="row">
+                <div class="col">
+                    <div class="input-group mb-3">
+                        <input type="text" class="form-control" placeholder="請輸入內容" v-model="todoText">
+                        <button class="btn btn-outline-secondary" type="button" @click="addTodo">
+                            <i class="bi bi-plus-lg"></i> 新增
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 過濾列表 -->
+            <div class="row mx-1">
+                <ul class="nav nav-pills justify-content-end ">
+                    <li class="nav-item">
+                        <a class="nav-link" href="javascript:;" :class="{ active : filterStatus == 'all' }" @click="filterStatus = 'all'">
+                            全部( {{ cnt.all }} )
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="javascript:;" :class="{ active : filterStatus == 'active' }" @click="filterStatus = 'active'">
+                            未完成( {{ cnt.active }} )
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="javascript:;" :class="{ active : filterStatus == 'completed' }" @click="filterStatus = 'completed'">
+                            已完成( {{ cnt.completed }} )
+                        </a>
+                    </li>
+                </ul>
+            </div>
+
+            <div class="row mx-1">
+                <ul class="list-group list-group-flush">
+                    <li class="list-group-item rounded" v-for="(item, i) in filterTodo" :key="item.id">
+                        <div class="row">
+                            <!-- 一般顯示畫面 ckeck list -->
+                            <div class="col" v-if="editItemId != item.id">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="item.id" :checked="item.status" @click="item.status = !item.status">
+                                    <label class="form-check-label" :class="{ 'completed' : item.status }">
+                                        {{ item.content }}
+                                    </label>
+                                </div>
+                            </div>
+
+                            <!-- 修改 input -->
+                            <div class="col-11" v-else>
+                                <input type="text" class="form-control" v-model="tempEditContent">
+                            </div>
+
+                            <!-- 按鈕 -->
+                            <div class="col-1 d-flex justify-content-end">
+                                <button class="btn me-1" @click="editItem(item.id, item.content)" v-if="editItemId != item.id">
+                                    <i class="bi bi-pencil-fill"></i>
+                                </button>
+                                <button class="btn me-1" @click="deleteItem(item.id)" v-if="editItemId != item.id">
+                                    <i class="bi bi-trash-fill"></i>
+                                </button>
+                                <button class="btn me-1" @click="saveItem(item.id)" v-if="editItemId == item.id">
+                                    <i class="bi bi-check-lg"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0/dist/js/bootstrap.bundle.min.js" integrity="sha384-p34f1UUtsS3wqzfto5wAAmdvj+osOnFyQFpp4Ua3gs/ZVWx6oOypYoCJhGGScy+8" crossorigin="anonymous"></script>
+    
+    <!-- 注意:記得要加 type="module"  -->
+    <script type="module">
+        import { createApp, ref, onMounted, computed, watch } from "https://cdnjs.cloudflare.com/ajax/libs/vue/3.1.4/vue.esm-browser.prod.min.js"
+        
+        const app = createApp({
+            setup() {
+                const todoText = ref('');
+                const todoList = ref([]);
+                const filterStatus = ref('all');
+                const editItemId = ref('');
+                const tempEditContent = ref('');
+                const cnt = ref({});
+
+                const addTodo = () => {
+                    todoList.value.push({
+                        id: Date.now(), // 用時間當id
+                        content: todoText.value,
+                        status: false
+                    })
+                    todoText.value = ''
+                }
+                const deleteItem = (itemId) => {
+                    const index = todoList.value.findIndex((item) => item.id == itemId);
+                    todoList.value.splice(index, 1);
+                }
+                const editItem = (itemId, itemContent) => {
+                    editItemId.value = itemId
+                    tempEditContent.value = itemContent
+                }
+                const saveItem = (itemId) => {
+                    const index = todoList.value.findIndex((item) => item.id == itemId);
+                    todoList.value[index].content = tempEditContent.value
+                    editItemId.value = ''
+                    tempEditContent.value = ''
+                }
+
+                onMounted(() => {
+                    todoList.value = JSON.parse(localStorage.getItem("localTodos"));
+                    if(todoList.value == null)
+                        todoList.value = [];
+                    cnt.value = {
+                        'all': todoList.value.length,
+                        'active': todoList.value.filter((item) => item.status == false).length,
+                        'completed': todoList.value.filter((item) => item.status == true).length
+                    }
+                })
+
+                const filterTodo = computed(() => {
+                    if(filterStatus.value == 'all')
+                        return todoList.value;
+                    else if(filterStatus.value == 'active')
+                        return todoList.value.filter((item) => item.status == false)
+                    else
+                        return todoList.value.filter((item) => item.status == true)
+                })
+
+                watch(todoList, (val) => {
+                        localStorage.setItem("localTodos", JSON.stringify(val));
+                        cnt.value = {
+                            'all': val.length,
+                            'active': val.filter((item) => item.status == false).length,
+                            'completed': val.filter((item) => item.status == true).length
+                        }
+                    },
+                    { deep: true }
+                );
+
+                return {
+                    todoText,
+                    todoList,
+                    filterStatus,
+                    editItemId,
+                    tempEditContent,
+                    cnt,
+
+                    addTodo,
+                    deleteItem,
+                    editItem,
+                    saveItem,
+
+                    filterTodo,
+
+                }
+            }
+        });
+        app.mount('#app');
+    </script>
+</body>
+</html>
